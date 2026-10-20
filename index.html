@@ -1,2 +1,40 @@
 <!DOCTYPE html>
-<html><head><title>temp</title></head><body>Uploading full app next...</body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Copier Wizard</title>
+<style>body{font-family:system-ui,sans-serif;padding:2rem;background:#f4f6f8;color:#18212b}</style>
+</head>
+<body>
+<p id="status">Loading Copier Wizard Build 280…</p>
+<script>
+(async function(){
+  const status = document.getElementById("status");
+  const PARTS = 12;
+  try {
+    const chunks = [];
+    for (let i = 0; i < PARTS; i++) {
+      status.textContent = "Loading part " + (i+1) + " of " + PARTS + "…";
+      const res = await fetch("app-part-" + i + ".b64");
+      if (!res.ok) throw new Error("Failed to load app-part-" + i + ".b64 (" + res.status + ")");
+      chunks.push(await res.text());
+    }
+    status.textContent = "Assembling app…";
+    const b64 = chunks.join("").replace(/\s+/g, "");
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const html = new TextDecoder("utf-8").decode(bytes);
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (err) {
+    status.innerHTML = "<strong>Could not load the app.</strong><br>" + String(err) +
+      "<br><br>Upload <code>index.html</code> from the Build 280 zip as a direct replacement if needed.";
+    console.error(err);
+  }
+})();
+</script>
+</body>
+</html>
