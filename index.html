@@ -11,27 +11,25 @@
 <script>
 (async function(){
   const status = document.getElementById("status");
-  const PARTS = 12;
   try {
-    const chunks = [];
-    for (let i = 0; i < PARTS; i++) {
-      status.textContent = "Loading part " + (i+1) + " of " + PARTS + "…";
-      const res = await fetch("app-part-" + i + ".b64");
-      if (!res.ok) throw new Error("Failed to load app-part-" + i + ".b64 (" + res.status + ")");
-      chunks.push(await res.text());
-    }
-    status.textContent = "Assembling app…";
-    const b64 = chunks.join("").replace(/\s+/g, "");
+    status.textContent = "Downloading app…";
+    const res = await fetch("app.gzip.b64");
+    if (!res.ok) throw new Error("Failed to load app.gzip.b64 (" + res.status + ")");
+    const b64 = (await res.text()).replace(/\s+/g, "");
+    status.textContent = "Decoding…";
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const html = new TextDecoder("utf-8").decode(bytes);
+    status.textContent = "Decompressing…";
+    const ds = new DecompressionStream("gzip");
+    const stream = new Blob([bytes]).stream().pipeThrough(ds);
+    const html = await new Response(stream).text();
     document.open();
     document.write(html);
     document.close();
   } catch (err) {
     status.innerHTML = "<strong>Could not load the app.</strong><br>" + String(err) +
-      "<br><br>Upload <code>index.html</code> from the Build 280 zip as a direct replacement if needed.";
+      "<br><br>Please upload the full <code>index.html</code> from the Build 280 zip to this repository root.";
     console.error(err);
   }
 })();
