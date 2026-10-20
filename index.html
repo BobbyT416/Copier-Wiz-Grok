@@ -11,12 +11,17 @@
 <script>
 (async function(){
   const status = document.getElementById("status");
+  const PARTS = 3;
   try {
-    status.textContent = "Downloading app…";
-    const res = await fetch("app.gzip.b64");
-    if (!res.ok) throw new Error("Failed to load app.gzip.b64 (" + res.status + ")");
-    const b64 = (await res.text()).replace(/\s+/g, "");
+    const chunks = [];
+    for (let i = 0; i < PARTS; i++) {
+      status.textContent = "Downloading part " + (i+1) + " of " + PARTS + "…";
+      const res = await fetch("app-gzip-" + i + ".b64");
+      if (!res.ok) throw new Error("Failed to load app-gzip-" + i + ".b64 (" + res.status + ")");
+      chunks.push(await res.text());
+    }
     status.textContent = "Decoding…";
+    const b64 = chunks.join("").replace(/\s+/g, "");
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -29,7 +34,7 @@
     document.close();
   } catch (err) {
     status.innerHTML = "<strong>Could not load the app.</strong><br>" + String(err) +
-      "<br><br>Please upload the full <code>index.html</code> from the Build 280 zip to this repository root.";
+      "<br><br>Upload the full <code>index.html</code> from the Build 280 zip to this repository root.";
     console.error(err);
   }
 })();
